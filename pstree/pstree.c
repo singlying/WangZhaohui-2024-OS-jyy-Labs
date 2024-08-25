@@ -52,6 +52,14 @@ void PrintTree(proc *p, proc *procs, int depth, int pflag)
   }
 }
 
+// 比较函数，用于根据pid对进程数组进行排序
+int compare_procs(const void *a, const void *b)
+{
+  proc *proc_a = (proc *)a;
+  proc *proc_b = (proc *)b;
+  return proc_a->pid - proc_b->pid;
+}
+
 int main(int argc, char *argv[])
 {
   // Get the arguments.
@@ -90,15 +98,16 @@ int main(int argc, char *argv[])
   // 如果是-v 直接退出
   if (vflag)
   {
-    printf("A simple pstree, version 1.0.0\n");
+    printf("Linux pstree, version 1.0.0\n");
     return 0;
   }
 
   // Read max pid.
   FILE *pid_max_f = fopen("/proc/sys/kernel/pid_max", "r");
+  assert(pid_max_f != NULL);
   if (pid_max_f == NULL)
   {
-    perror("No pid_max");
+    perror("No pid_max or it can not be visitted");
     return -1;
   }
   int pid_max;
@@ -117,17 +126,19 @@ int main(int argc, char *argv[])
   // Proc array.
   proc *procs;
   procs = malloc(sizeof(proc) * (pid_max + 1));
+  assert(procs != NULL);
   pid_t *ppids;
-  ppids = malloc(sizeof(pid_t) * pid_max);
+  ppids = malloc(sizeof(pid_t) * pid_max); // 存储父进程pid
+  assert(ppids != NULL);
   proc *p = procs;
 
   // Read proc directory.
   while ((dent = readdir(srcdir)) != NULL)
   {
+    // 如果名称不是数字起始，说明不是proc文件
     if (dent->d_name[0] < '0' || dent->d_name[0] > '9')
-    {
       continue;
-    }
+
     // Save the pids.
     p->pid = atoi(dent->d_name);
 
@@ -138,7 +149,7 @@ int main(int argc, char *argv[])
     strcat(path, "/");
     strcat(path, dent->d_name);
     strcat(path, "/status");
-    FILE *f = fopen(path, "r");
+    FILE *f = fopen(path, "r"); // proc/[PID]/status
     while ((fscanf(f, "%s", buf) != EOF))
     {
       if (strcmp(buf, "Name:") == 0)
@@ -155,6 +166,12 @@ int main(int argc, char *argv[])
   }
   int proc_count = p - procs;
   printf("Total proc: %d\n", proc_count);
+
+  // 如果 -n 参数被设置，则按PID排序
+  if (nflag)
+  {
+    qsort(procs, proc_count, sizeof(proc), compare_procs);
+  }
 
   // Build the tree.
   for (int i = 0; i < proc_count; ++i)
