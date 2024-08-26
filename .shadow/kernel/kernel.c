@@ -20,6 +20,7 @@ void print_key() {
   AM_INPUT_KEYBRD_T event = { .keycode = AM_KEY_NONE };
   ioe_read(AM_INPUT_KEYBRD, &event);
   if (event.keycode != AM_KEY_NONE && event.keydown) {
+    printf("Keycode: %d\n", event.keycode);
     puts("Key pressed: ");
     puts(key_names[event.keycode]);
     puts("\n");
