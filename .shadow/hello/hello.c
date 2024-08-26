@@ -72,19 +72,6 @@ void draw_image(uint32_t *image_data, int img_width, int img_height) {
   }
 }
 
-// 键盘事件处理
-// void print_key()
-// {
-//   AM_INPUT_KEYBRD_T event = {.keycode = AM_KEY_NONE};
-//   ioe_read(AM_INPUT_KEYBRD, &event);
-//   if (event.keycode != AM_KEY_NONE && event.keydown)
-//   {
-//     puts("Key pressed: ");
-//     puts(key_names[event.keycode]);
-//     puts("\n");
-//   }
-// }
-
 int main(const char *args)
 {
   // 初始化 I/O 环境
