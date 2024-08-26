@@ -3,6 +3,8 @@
 #include <klib.h>
 #include <klib-macros.h>
 
+#define AM_KEY_ESC 1
+
 static int w, h; // Screen size
 
 #define KEYNAME(key) \
@@ -100,7 +102,7 @@ int main(const char *args)
   while (1) {
     AM_INPUT_KEYBRD_T event = { .keycode = AM_KEY_NONE };
     ioe_read(AM_INPUT_KEYBRD, &event);
-    if (event.keycode == "ESC" && event.keydown) {
+    if (event.keycode == AM_KEY_ESC && event.keydown) {
       free(image_data);  // 释放图片内存
       halt(0);
     }
