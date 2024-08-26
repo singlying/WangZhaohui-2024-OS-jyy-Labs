@@ -9,7 +9,6 @@ static int w, h; // Screen size
 
 #define KEYNAME(key) \
   [AM_KEY_##key] = #key,
-// static const char *key_names[] = {AM_KEYS(KEYNAME)};
 
 static inline void puts(const char *s)
 {
