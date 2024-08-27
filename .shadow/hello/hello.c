@@ -130,13 +130,13 @@ int main(const char *args)
   get_display_info();
 
   // 提取图片的宽度和高度（这需要从 BMP 头部读取）
-  int img_width = *(int*)&tongji_bmp[18];
-  int img_height = *(int*)&tongji_bmp[22];
+  int img_width = *(int*)&p1_bmp[18];
+  int img_height = *(int*)&p1_bmp[22];
   // uint32_t *image_data = load_image("image.bmp", &img_width, &img_height);
   // draw_image(image_data, img_width, img_height);
 
 
-  draw_image_from_array(tongji_bmp + 54, img_width, img_height);  // 54 字节偏移到 BMP 数据部分
+  draw_image_from_array(p1_bmp + 54, img_width, img_height);  // 54 字节偏移到 BMP 数据部分
 
  // 等待用户按键退出
   puts("Press ESC to exit...\n");
