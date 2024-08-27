@@ -40,6 +40,23 @@ uint32_t* load_image(const char *filename, int *width, int *height) {
   *width = 100;
   *height = 100;
 
+  // 定义至少10种颜色的数组
+  uint32_t colors[] = {
+    0xff0000,  // 红色
+    0x00ff00,  // 绿色
+    0x0000ff,  // 蓝色
+    0xffff00,  // 黄色
+    0xff00ff,  // 洋红
+    0x00ffff,  // 青色
+    0x000000,  // 黑色
+    0xffffff,  // 白色
+    0x808080,  // 灰色
+    0x800000,  // 栗色
+    0x008000,  // 橄榄绿
+    0x000080   // 海军蓝
+  };
+
+
   // 分配内存并生成一个简单的图像（随机颜色填充）
   uint32_t *image_data = (uint32_t *)malloc(*width * *height * sizeof(uint32_t));
   for (int i = 0; i < (*width) * (*height); i++) {
