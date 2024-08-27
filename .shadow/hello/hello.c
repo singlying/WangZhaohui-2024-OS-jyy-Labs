@@ -99,8 +99,10 @@ void draw_image_from_array(unsigned char *image_data, int img_width, int img_hei
   int row_padded = (img_width * 3 + 3) & (~3); // BMP 行的字节数对齐到4的倍数
 
   for (int y = 0; y < img_height; y++) {
+    // 计算当前行的起始索引，反向遍历行
+    int row_index = (img_height - 1 - y) * row_padded;
     for (int x = 0; x < img_width; x++) {
-      int pixel_index = y * row_padded + x * 3;
+      int pixel_index = row_index + x * 3;
       uint32_t color = (image_data[pixel_index + 2] << 16) |
                       (image_data[pixel_index + 1] << 8) |
                       (image_data[pixel_index]);
