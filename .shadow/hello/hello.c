@@ -75,27 +75,6 @@ void draw_image(uint32_t *image_data, int img_width, int img_height) {
 
   for (int y = 0; y < img_height; y++) {
     for (int x = 0; x < img_width; x++) {
-      uint32_t color = image_data[y * img_width + x];
-
-      AM_GPU_FBDRAW_T event = {
-        .x = x_offset + x,
-        .y = y_offset + y,
-        .w = 1,
-        .h = 1,
-        .pixels = &color,
-        .sync = 1,
-      };
-      ioe_write(AM_GPU_FBDRAW, &event);
-    }
-  }
-}
-
-void draw_image(uint32_t *image_data, int img_width, int img_height) {
-  int x_offset = (w - img_width) / 2;
-  int y_offset = (h - img_height) / 2;
-
-  for (int y = 0; y < img_height; y++) {
-    for (int x = 0; x < img_width; x++) {
       // 获取图像中的像素颜色
       uint32_t color = image_data[y * img_width + x];
 
@@ -126,7 +105,7 @@ int main(const char *args)
   uint32_t *image_data = load_image("image.bmp", &img_width, &img_height);
 
   draw_image(image_data, img_width, img_height);
-  
+
  // 等待用户按键退出
   puts("Press ESC to exit...\n");
   while (1) {
