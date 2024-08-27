@@ -2,6 +2,7 @@
 #include <amdev.h>
 #include <klib.h>
 #include <klib-macros.h>
+#include "image_data.h"
 
 #define AM_KEY_ESC 1
 #define WIDTH 200
@@ -31,18 +32,16 @@ void get_display_info()
   w = info.width;
   h = info.height;
 
-  // 打印获取到的屏幕宽度和高度信息
-  printf("Screen width: %d\n", w);
-  printf("Screen height: %d\n", h);
+  // printf("Screen width: %d\n", w);
+  // printf("Screen height: %d\n", h);
 }
 
-// 模拟加载图片数据的函数
+// 随机生成图片
 uint32_t* load_image(const char *filename, int *width, int *height) {
-  // 假设图片大小为 100x100
   *width = WIDTH;
   *height = LENTH;
 
-  // 定义至少10种颜色的数组
+  // color array
   uint32_t colors[] = {
     0xff0000,  // 红色
     0x00ff00,  // 绿色
@@ -70,7 +69,6 @@ uint32_t* load_image(const char *filename, int *width, int *height) {
 
   return image_data;
 }
-
 void draw_image(uint32_t *image_data, int img_width, int img_height) {
   int x_offset = (w - img_width) / 2;
   int y_offset = (h - img_height) / 2;
@@ -94,6 +92,33 @@ void draw_image(uint32_t *image_data, int img_width, int img_height) {
   }
 }
 
+// 从图片加载
+void draw_image_from_array(unsigned char *image_data, int img_width, int img_height) {
+  int x_offset = (w - img_width) / 2;
+  int y_offset = (h - img_height) / 2;
+  int row_padded = (img_width * 3 + 3) & (~3); // BMP 行的字节数对齐到4的倍数
+
+  for (int y = 0; y < img_height; y++) {
+    for (int x = 0; x < img_width; x++) {
+      int pixel_index = y * row_padded + x * 3;
+      uint32_t color = (image_data[pixel_index + 2] << 16) |
+                      (image_data[pixel_index + 1] << 8) |
+                      (image_data[pixel_index]);
+
+      AM_GPU_FBDRAW_T event = {
+        .x = x_offset + x,
+        .y = y_offset + y,
+        .w = 1,
+        .h = 1,
+        .pixels = &color,
+        .sync = 1,
+      };
+      ioe_write(AM_GPU_FBDRAW, &event);
+    }
+  }
+}
+
+
 int main(const char *args)
 {
   // 初始化 I/O 环境
@@ -102,11 +127,14 @@ int main(const char *args)
   // 获取并显示设备的显示信息
   get_display_info();
 
-  // 加载图片
-  int img_width, img_height;
-  uint32_t *image_data = load_image("image.bmp", &img_width, &img_height);
+  // 提取图片的宽度和高度（这需要从 BMP 头部读取）
+  int img_width = *(int*)&p1_bmp[18];
+  int img_height = *(int*)&p1_bmp[22];
+  // uint32_t *image_data = load_image("image.bmp", &img_width, &img_height);
+  // draw_image(image_data, img_width, img_height);
 
-  draw_image(image_data, img_width, img_height);
+
+  draw_image_from_array(p1_bmp + 54, img_width, img_height);  // 54 字节偏移到 BMP 数据部分
 
  // 等待用户按键退出
   puts("Press ESC to exit...\n");
@@ -114,7 +142,7 @@ int main(const char *args)
     AM_INPUT_KEYBRD_T event = { .keycode = AM_KEY_NONE };
     ioe_read(AM_INPUT_KEYBRD, &event);
     if (event.keycode == AM_KEY_ESC && event.keydown) {
-      free(image_data);  // 释放图片内存
+      // free(image_data);  // 释放图片内存
       halt(0);
     }
   }
