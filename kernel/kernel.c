@@ -3,7 +3,7 @@
 #include <klib.h>
 #include <klib-macros.h>
 
-#define SIDE 16
+#define SIDE 16 // 设置图形网格的每个单元格的大小
 
 static int w, h;  // Screen size
 
@@ -15,16 +15,19 @@ static inline void puts(const char *s) {
   for (; *s; s++) putch(*s);
 }
 
+// 键盘事件处理
 void print_key() {
   AM_INPUT_KEYBRD_T event = { .keycode = AM_KEY_NONE };
   ioe_read(AM_INPUT_KEYBRD, &event);
   if (event.keycode != AM_KEY_NONE && event.keydown) {
+    printf("Keycode: %d\n", event.keycode);
     puts("Key pressed: ");
     puts(key_names[event.keycode]);
     puts("\n");
   }
 }
 
+// 绘制图块
 static void draw_tile(int x, int y, int w, int h, uint32_t color) {
   uint32_t pixels[w * h]; // WARNING: large stack-allocated memory
   AM_GPU_FBDRAW_T event = {
@@ -37,6 +40,7 @@ static void draw_tile(int x, int y, int w, int h, uint32_t color) {
   ioe_write(AM_GPU_FBDRAW, &event);
 }
 
+// 绘制棋盘格模式的背景
 void splash() {
   AM_GPU_CONFIG_T info = {0};
   ioe_read(AM_GPU_CONFIG, &info);

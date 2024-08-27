@@ -13,6 +13,7 @@ void putch(char ch) {
   putchar(ch);
 }
 
+// 终止程序并输出一个退出码。函数的核心逻辑如下
 void halt(int code) {
   const char *fmt = "Exit code = 40h\n";
   for (const char *p = fmt; *p; p++) {
