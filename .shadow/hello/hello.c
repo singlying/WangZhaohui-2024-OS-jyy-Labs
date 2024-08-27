@@ -5,6 +5,7 @@
 
 #define AM_KEY_ESC 1
 
+
 static int w, h; // Screen size
 
 #define KEYNAME(key) \
