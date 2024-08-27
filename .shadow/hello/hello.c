@@ -4,7 +4,8 @@
 #include <klib-macros.h>
 
 #define AM_KEY_ESC 1
-
+#define WIDTH 200
+#define LENTH 200
 
 static int w, h; // Screen size
 
@@ -38,8 +39,8 @@ void get_display_info()
 // 模拟加载图片数据的函数
 uint32_t* load_image(const char *filename, int *width, int *height) {
   // 假设图片大小为 100x100
-  *width = 100;
-  *height = 100;
+  *width = WIDTH;
+  *height = LENTH;
 
   // 定义至少10种颜色的数组
   uint32_t colors[] = {
