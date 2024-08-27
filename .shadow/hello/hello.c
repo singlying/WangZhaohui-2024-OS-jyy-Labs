@@ -96,8 +96,6 @@ void draw_image(uint32_t *image_data, int img_width, int img_height) {
 void draw_image_from_array(unsigned char *image_data, int img_width, int img_height) {
   int x_offset = (w - img_width) / 2;
   int y_offset = (h - img_height) / 2;
-  x_offset = 0;
-  y_offset = 0;
   int row_padded = (img_width * 3 + 3) & (~3); // BMP 行的字节数对齐到4的倍数
 
   for (int y = 0; y < img_height; y++) {
