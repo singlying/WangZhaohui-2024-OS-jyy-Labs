@@ -55,14 +55,39 @@ uint32_t* load_image(const char *filename, int *width, int *height) {
     0x008000,  // 橄榄绿
     0x000080   // 海军蓝
   };
+  int num_colors = sizeof(colors) / sizeof(colors[0]);
 
+  srand(0x56ffac); // 自由定义的一个数字
 
   // 分配内存并生成一个简单的图像（随机颜色填充）
   uint32_t *image_data = (uint32_t *)malloc(*width * *height * sizeof(uint32_t));
   for (int i = 0; i < (*width) * (*height); i++) {
-    image_data[i] = 0xff0000;  // 使用红色填充
+    int random_index = rand() % num_colors;
+    image_data[i] = colors[random_index];
   }
+
   return image_data;
+}
+
+void draw_image(uint32_t *image_data, int img_width, int img_height) {
+  int x_offset = (w - img_width) / 2;
+  int y_offset = (h - img_height) / 2;
+
+  for (int y = 0; y < img_height; y++) {
+    for (int x = 0; x < img_width; x++) {
+      uint32_t color = image_data[y * img_width + x];
+
+      AM_GPU_FBDRAW_T event = {
+        .x = x_offset + x,
+        .y = y_offset + y,
+        .w = 1,
+        .h = 1,
+        .pixels = &color,
+        .sync = 1,
+      };
+      ioe_write(AM_GPU_FBDRAW, &event);
+    }
+  }
 }
 
 void draw_image(uint32_t *image_data, int img_width, int img_height) {
@@ -100,6 +125,8 @@ int main(const char *args)
   int img_width, img_height;
   uint32_t *image_data = load_image("image.bmp", &img_width, &img_height);
 
+  draw_image(image_data, img_width, img_height);
+  
  // 等待用户按键退出
   puts("Press ESC to exit...\n");
   while (1) {

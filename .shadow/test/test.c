@@ -6,7 +6,7 @@
 int main(const char *args)
 {
   // 测试函数
-  printf("%d%s%s\n", 2, "    ", "this is a test");
-  printf("%d\n", sizeof(int));
+  
+
   return 0;
 }
