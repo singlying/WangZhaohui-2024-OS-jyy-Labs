@@ -44,7 +44,7 @@ assert(F == nonpages_top)
 Space for large memory allocations. Use NodeHeader to track all free memory blocks.
 */
 
-Area heap;
+Area Heap;
 
 // The list node struct in every page.
 typedef struct Block {
@@ -93,8 +93,8 @@ NodeHeader* header_start;
 int non_page_lock = UNLOCKED;
 
 static void init_pages_total() {
-  pages_total = (PageInfo**)heap.start;
-  pages_bottom = (uintptr_t)heap.start + CPU_NUM_MAX * sizeof(PageInfo*);
+  pages_total = (PageInfo**)Heap.start;
+  pages_bottom = (uintptr_t)Heap.start + CPU_NUM_MAX * sizeof(PageInfo*);
 #ifdef VERBOSE
   printf("Init pages_total, pages_total is %p, pages_bottom is %p\n", pages_total, (char*)pages_bottom);
 #endif
@@ -117,9 +117,9 @@ static void init_pages_info() {
 }
 
 static void init_nonpages_top() {
-  header_start = (NodeHeader*)((uintptr_t)heap.start + ((uintptr_t)heap.end - (uintptr_t)heap.start) / 2);
+  header_start = (NodeHeader*)((uintptr_t)Heap.start + ((uintptr_t)Heap.end - (uintptr_t)Heap.start) / 2);
   header_start->next = NULL;
-  header_start->size = ((uintptr_t)heap.end - (uintptr_t)heap.start) / 2 - sizeof(NodeHeader);
+  header_start->size = ((uintptr_t)Heap.end - (uintptr_t)Heap.start) / 2 - sizeof(NodeHeader);
 }
 
 // Alloc a new page starting from |pages_bottom| for block size of 32 << |index|.
@@ -343,8 +343,8 @@ static void kfree(void *ptr) {
 
 #ifndef TEST
 static void pmm_init() {
-  uintptr_t pmsize = ((uintptr_t)heap.end - (uintptr_t)heap.start);
-  printf("Got %d MiB heap: [%p, %p)\n", pmsize >> 20, heap.start, heap.end);
+  uintptr_t pmsize = ((uintptr_t)Heap.end - (uintptr_t)Heap.start);
+  printf("Got %d MiB Heap: [%p, %p)\n", pmsize >> 20, Heap.start, Heap.end);
   init_pages_total();
   init_pages_info();
   init_nonpages_top();
@@ -353,9 +353,9 @@ static void pmm_init() {
 #else
 static void pmm_init() {
   char *ptr  = malloc(HEAP_SIZE);
-  heap.start = ptr;
-  heap.end   = ptr + HEAP_SIZE;
-  printf("Got %d MiB heap: [%p, %p)\n", HEAP_SIZE >> 20, heap.start, heap.end);
+  Heap.start = ptr;
+  Heap.end   = ptr + HEAP_SIZE;
+  printf("Got %d MiB Heap: [%p, %p)\n", HEAP_SIZE >> 20, Heap.start, Heap.end);
   init_pages_total();
   init_pages_info();
   init_nonpages_top();
