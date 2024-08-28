@@ -1,3 +1,5 @@
+export TOKEN   := ???
+
 # ----- DO NOT MODIFY -----
 
 ifeq ($(NAME),)
@@ -6,7 +8,7 @@ endif
 
 SRCS   := $(shell find . -maxdepth 1 -name "*.c")
 DEPS   := $(shell find . -maxdepth 1 -name "*.h") $(SRCS)
-CFLAGS += -O1 -std=gnu11 -ggdb -Wall -Werror -Wno-unused-result -Wno-unused-value -Wno-unused-variable
+CFLAGS += -O1 -g -std=gnu11 -ggdb -Wall -Werror -Wno-unused-result -Wno-unused-value -Wno-unused-variable
 
 .PHONY: all git test clean commit-and-make
 
@@ -28,4 +30,4 @@ $(NAME)-32.so: $(DEPS) # 32bit shared library
 clean:
 	rm -f $(NAME)-64 $(NAME)-32 $(NAME)-64.so $(NAME)-32.so
 
-include ../oslabs.mk
+include ../Makefile.lab
