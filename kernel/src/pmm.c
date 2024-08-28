@@ -2,10 +2,10 @@
 #ifdef TEST
 #include <stdio.h>
 #include <stdlib.h>
-int HEAP_SIZE = 125 << 20;
+int HEAP_SIZE = 125 << 20; // 堆的大小
 #endif
 
-#define CPU_NUM_MAX 8
+#define CPU_NUM_MAX 8 // 最大CPU数量
 #define MIN_BLOCK_SIZE 32
 #define PAGES_PER_CPU 9 // 32 ~ 8192
 #define MAX_BLOCK_SIZE 8192
@@ -46,23 +46,23 @@ Space for large memory allocations. Use NodeHeader to track all free memory bloc
 
 Area Heap;
 
-// The list node struct in every page.
+// 链表节点结构，表示页面中的内存块
 typedef struct Block {
   struct Block* next;
 } Block;
 
-// The header struct at beginning of every page.
+// 页面头结构，包含当前页面的元数据
 typedef struct PageHeader {
   // The pointer to next page of the same block size.
   struct PageHeader* next;
-  // The pointer to **the first** empty block in current page.
+  // The pointer to the first empty block in current page.
   // Initially it is the second block in every page, since the header occupies the first block.
   // When the page is full it is marked as NULL.
   Block* current_block;
   int lock;
 } PageHeader;
 
-// A helper struct to store all the pages headers pointer.
+// 储存所有的页头
 typedef struct PageInfo {
   PageHeader* headers[PAGES_PER_CPU];
 } PageInfo;
@@ -92,6 +92,7 @@ NodeHeader* header_start;
 
 int non_page_lock = UNLOCKED;
 
+// 初始化pages_total指针，并设置pages_bottom的初始值
 static void init_pages_total() {
   pages_total = (PageInfo**)Heap.start;
   pages_bottom = (uintptr_t)Heap.start + CPU_NUM_MAX * sizeof(PageInfo*);
@@ -100,6 +101,7 @@ static void init_pages_total() {
 #endif
 }
 
+// 为每个CPU初始化PageInfo结构体，并对齐pages_bottom地址
 static void init_pages_info() {
   for (int i = 0; i < CPU_NUM_MAX; ++i) {
     pages_total[i] = (PageInfo*)pages_bottom;
@@ -116,6 +118,7 @@ static void init_pages_info() {
   }
 }
 
+// 初始化header_start指针，标记非页面内存区域的起点
 static void init_nonpages_top() {
   header_start = (NodeHeader*)((uintptr_t)Heap.start + ((uintptr_t)Heap.end - (uintptr_t)Heap.start) / 2);
   header_start->next = NULL;
@@ -139,6 +142,7 @@ static PageHeader* alloc_new_page_for_index(int index) {
   return header;
 }
 
+// 为每个CPU初始化不同大小的页面，调用alloc_new_page_for_index()为每个块大小分配一个页面
 static void init_pages() {
   for (int i = 0; i < CPU_NUM_MAX; ++i) {
     #ifdef VERBOSE
