@@ -1,20 +1,24 @@
-# M1:打印进程树(pstree)
+# M4: C Read-Eval-Print-Loop (crepl)
 
-> 实现Linux下的 `pstree`命令
+> 实现一个`C shell`
 
 ## 实验目的和要求
 
 **目的**：
 
-- 了解Linux进程管理和进程树结构
-- 使用C语言读取Linux系统进程信息
-- 实现一个模拟`pstree`命令的程序
+- 理解动态编译和动态加载
+- 交互式的C shell
+- 学会使用动态链接库
 
-**要求**：**打印进程树**
+**要求**：**实现一个C shell**
 
-- `pstree`指令正确列出系统中的进程，有美观的排版布局
-- 实现一部分参数并且参数可以组合
-- 实现32-bit和64-bit版本
+- 实现一个简单的C语言Read-Eval-Print-Loop (REPL)系统
+- `crepl` - 逐行从 stdin 中输入单行 C 语言代码，并根据输入内容分别处理：
+  - 如果输入一个 C 函数的定义，则把函数编译并加载到进程的地址空间中；
+  - 如果输入是一个 C 语言表达式，则把它的值输出。
+- 约定实验只处理int类型数据和返回值和int类型的函数
+
+
 
 
 
@@ -28,129 +32,129 @@
 
 
 
-## 实验原理
+## 实验步骤和细节
 
-### 进程树pstree
-
-​	进程通过派生产生新的进程，进程之间也存在着父子关系，所有的进程组合在一起构成了进程树。
-
-Linux系统中`pstree`命令可以打印当前进程树，本实验需要实现以下的参数：
-
-> pstree[OPTION]
-
-- `-p` 或 `--show-pids`: 打印每个进程的进程号。
-- `-n` 或 `--numeric-sort`: 按照pid的数值从小到大顺序输出一个进程的直接孩子。
-- `-V` 或 `--version`: 打印版本信息。
-
-### Linux    /proc
-
-​	`procfs`进程文件系统提供了Linux系统中的进程信息。对于某个进程号[PID]的进程，打开/proc/[PID]目录，该目录下保存了与该进程相关的信息。
-
-​	实验中需要获取每个进程的名称，进程号，父进程等信息，构建进程树并打印。
-
-
-
-## 实验步骤
-
-### 实现步骤
-
-- 读取`/proc`目录中的进程信息并进行存储
-- 根据进程的父子关系构建进程树
-- 打印进程树
-
-### Makefile编写
-
-- 编写`Makefiel`来实现自动化的程序编译和执行，以及后续的调试运行
-
-
-
-
-
-## 具体实现细节
-
-### 获取命令行参数
-
-​	main函数的参数是进程"初始状态的一部分"，由操作系统负责将其存储在内存中。在C语言中，直接访问main函数的参数即可实现对指令附带参数的访问，下面是一个实例：
+### 实现REPL主循环
 
 ~~~c
-#include <stdio.h>
-#include <assert.h>
-#include <getopt>  //处理参数需要调用的库
-
 int main(int argc, char *argv[]) {
-  for (int i = 0; i < argc; i++) {
-    assert(argv[i]); // C 标准保证
-    printf("argv[%d] = %s\n", i, argv[i]);
+  while (1) {
+    printf("crepl> ");
+    memset(line,'\0',sizeof(line));
+    memset(tmp,'\0',sizeof(tmp));
+    fflush(stdout);
+    if (!fgets(line, sizeof(line), stdin)) {
+      break;
+    }
+    sscanf(line,"%3s",tmp);
+    compile(strncmp(line,"int",3)==0);
   }
-  assert(!argv[argc]); // C 标准保证
-  return 0;
 }
 ~~~
 
-### 获取proc信息
+在本实验中，`main()`函数实现了一个基本的REPL（Read-Eval-Print-Loop）主循环。REPL循环通过以下步骤实现：
 
-​          使用C库函数`opendir`打开 `/proc` 目录，读取 `/proc` 目录下的每个子目录
+1. **输入读取**：程序使用`fgets()`从标准输入读取用户输入，并将其存储在`line`字符数组中。`fgets()`函数能够处理用户输入的整行内容，包括表达式和函数定义。
+2. **输入预处理**：使用`sscanf()`函数从输入中提取前三个字符，并存储在`tmp`数组中。这一步用于判断用户输入的是一个函数定义还是一个表达式计算。
+3. **调用编译函数**：根据输入的前三个字符，判断是否为函数定义（即以`int`开头的输入）。如果是函数定义，传递`true`参数给`compile()`函数；否则，传递`false`。这一步决定了`compile()`函数的执行逻辑。
+4. **循环控制**：在循环的每次迭代结束后，REPL会继续等待用户的下一次输入，直到用户终止输入（例如按下`Ctrl+D`）。
 
-~~~c
-while ((dent = readdir(srcdir)) != NULL)
-{
-    if (dent->d_name[0] < '0' || dent->d_name[0] > '9')
-        continue;
-    // Save the pids.
-    p->pid = atoi(dent->d_name);
+### 代码编译与动态加载
 
+`compile()`函数是REPL的核心，它负责将用户输入的代码动态编译为共享库文件，并加载执行。其步骤如下：
+
+1. **创建临时文件**：`mkstemp()`函数被用来创建两个临时文件，一个用于存储用户输入的C代码（`src_filename`），另一个用于存储编译后的共享库文件（`dst_filename`）。如果文件创建失败，程序会输出错误信息并中断操作。
+2. **写入源代码**：根据输入类型（函数定义或表达式），将代码写入临时文件。对于表达式，代码会被包裹在一个返回整数的函数中（`wrap_func`），以便能够在后续步骤中调用。
+3. **动态编译**：使用`fork()`创建一个子进程，子进程调用`execvp()`运行GCC命令，将用户输入的代码编译为共享库文件。为了避免不必要的输出，`dup2()`将子进程的标准输出和标准错误重定向到`/dev/null`。
+4. **检查编译结果**：父进程等待子进程完成编译，并检查编译状态。如果编译失败，程序会输出相应的错误信息。
+5. **动态加载与执行**：
+   - 编译成功后，程序使用`dlopen()`动态加载编译好的共享库文件。
+   - 如果用户输入的是表达式，使用`dlsym()`获取`wrap_func`函数的地址，并调用该函数执行表达式计算。计算结果通过`printf()`输出。
+   - 如果用户输入的是函数定义，程序仅输出函数定义已被添加的信息。
+6. **清理工作**：无论操作成功与否，临时文件（源代码文件和共享库文件）都会被删除以避免系统中的临时文件堆积。
+
+### 动态链接与执行
+
+在本实验中，程序使用了POSIX标准的动态链接库（`libdl`）来加载和执行编译后的C代码。以下是具体步骤：
+
+1. **动态链接**：`dlopen()`函数被用来动态加载共享库文件。`RTLD_NOW`标志确保所有符号在加载时立即解析，而`RTLD_GLOBAL`标志允许其他共享库引用此共享库的符号。
+2. **获取函数指针**：对于表达式，`dlsym()`函数被用来获取`wrap_func`函数的地址，并将其赋值给函数指针`f`。此时，`f`指向编译后的C函数。
+3. **调用并执行**：通过调用函数指针`f()`，程序执行用户输入的表达式。结果通过`printf()`输出。对于函数定义，程序仅提示函数已被添加，不做进一步操作。
+4. **错误处理**：如果在动态加载或执行过程中出现错误（例如未能成功加载共享库或未找到目标符号），程序会输出相应的错误信息并中止操作。
+
+
+
+## 演示示例
+
+- 计算表达式
+
+~~~bash
+crepl> 3 + 5
+	Result: 8
 ~~~
 
-​        程序通过检查目录名是否以数字为开头，以此为标准判断是否为进程目录。
+- 函数定义与调用
 
-~~~c
-while ((fscanf(f, "%s", buf) != EOF))
-{
-    if (strcmp(buf, "Name:") == 0)
-        fscanf(f, "%s", p->name);   //进程名称
-    if (strcmp(buf, "PPid:") == 0)
-        fscanf(f, "%d", &ppids[p - procs]);  //父进程信息
-}
+~~~bash
+crepl> int add(int a, int b) { return a + b; }
+	Added: int add(int a, int b) { return a + b; }
+crepl> add(10, 20)
+	Result: 30
 ~~~
 
-​        打开 `/proc/[PID]/status` 文件的路径，从中读取进程的详细信息。
+- 编译错误
 
-### 构建进程树并打印
-
-​        通过维护两个数组`procs`和`ppids`来保存对应的父子进程信息。
-
-~~~c
-for (int i = 0; i < proc_count; ++i)
-    for (int j = 0; j < proc_count; ++j)
-        if (ppids[j] == procs[i].pid)
-            procs[i].children[procs[i].child_num++] = procs[j].pid;
+~~~
+crepl> int add(int a, int b) { return a + ; }
+      Compile Error!
 ~~~
 
-​	打印进程树使用递归实现，从根目录开始逐层打印。
+在以上的实验中，函数和表达式均可以调用之前定义过的函数，这对于交互式的 C Shell 来说是 “自然” 的需求。当然，为了简化处理，假设函数和表达式都不会访问全局的状态 (变量) 或调用任何库函数，重复定义重名函数并没有做出过多处理。
 
 
 
-## 可能存在的问题
+## 实验总结-心路历程
 
-### Linux权限不足的问题
+实验整体较为简单，最重要的一点是如何实现动态编译。
 
-> 使用 sudo ./pstree
+这看上去是一个非常高端的操作，但是因为有非常强大的工具GCC，其实真正实现起来并不高端。
 
-### 进程信息更新
+通过将用户输入的代码写入临时文件并调用GCC来编译成共享库文件，可以实现动态编译的目标。其中，如何管理临时文件，我又去了解了Linux临时文件的相关机制，实现了用`mkstemp()`的管理。
 
-​        在处理 `/proc` 文件系统中的进程信息时，可能会遇到前后数据不一致的问题，因为进程信息在不断变化。本实验中并没有对相关问题进行处理，但存在以下的一些可能解决办法：
+之后需要生成共享库动态加载并执行，这依赖于`libdl`库，需要了解`dlopen()`、`dlsym()`以及`dlclose()`函数的使用。
 
-- **锁定文件**：Linux 文件系统本身并没有直接的文件锁机制用于锁定 `/proc` 文件。不过，使用系统调用 `flock()` 或 `fcntl()` 对文件进行加锁可以帮助在某些情况下避免并发访问问题。然而，这些方法对 `/proc` 文件的行为可能有限，通常只对普通文件有效。
-- **读取一致性**：尽量在同一个时间点读取所有必要的信息。这可以通过在一次读取过程中尽量减少文件访问间隔来实现。例如，在读取所有需要的信息之前尽量避免中途插入其他的文件访问操作。
-- **使用快照**：尽可能在读取信息的过程中创建一个一致的快照。例如，将所有需要的信息先读取到内存中，然后再处理这些信息。这种方式可以避免因数据变化引起的不一致问题。
+总结，一个看似简单的项目其实用到了非常多没有接触到的知识，各种奇怪/神奇的库，各种Bug，各种新奇的实现一度让我怀疑这是不是C语言。但是Every step counts! 还是最终实现了目标。
 
 
 
+## RTFM：参考的手册
+
+![img](https://jyywiki.cn/pages/OS/img/rtfm.jpg)
+
+**WTFM！READ THE FRIENDLY MANUAL!**  来自课程文档中的一张经典图片。
+
+copilot时代，AI生成的代码会给人一种“我也行”的错觉。但是无论如何，在学习阶段，手册都是不可替代的：读一读 dlopen 相关库函数的手册、elf (5)，“遍历” 式的学习可以让学习者不仅了解 “这一个知识”，还可以发散地理解与它相关的概念体系。即便使用了 AI 生成的代码，好好研读和学习也是很有必要的。
 
 
 
-
-
-
-
-
+1. **GCC手册**
+   GNU Compiler Collection (GCC) 官方文档
+   URL: [https://gcc.gnu.org/onlinedocs/]()
+2. **C语言标准库参考手册**
+   《The C Programming Language》 by Brian W. Kernighan and Dennis M. Ritchie
+   ISBN: 978-0131103627
+3. **POSIX标准文档**
+   Portable Operating System Interface (POSIX) 标准
+   URL: [https://pubs.opengroup.org/onlinepubs/9699919799/]()
+4. **libdl 动态链接库参考**
+   Dynamic Linking Library (`libdl`) 使用指南
+   URL: [https://man7.org/linux/man-pages/man3/dlopen.3.html]()
+5. **Linux System Programming, 2nd Edition** by Robert Love
+   O'Reilly Media, 2013
+   ISBN: 978-1449339531
+6. **Advanced Linux Programming** by CodeSourcery LLC
+   New Riders Publishing, 2001
+   ISBN: 978-0735710436
+7. **UNIX编程环境**
+   《The UNIX Programming Environment》 by Brian W. Kernighan and Rob Pike
+   ISBN: 978-0139376817
