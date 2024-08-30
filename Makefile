@@ -6,7 +6,7 @@ endif
 
 SRCS   := $(shell find . -maxdepth 1 -name "*.c")
 DEPS   := $(shell find . -maxdepth 1 -name "*.h") $(SRCS)
-CFLAGS += -O1 -std=gnu11 -ggdb -Wall -Werror -Wno-unused-result -Wno-unused-value -Wno-unused-variable -fopenmp -DDEFAULT_THREADS=1
+CFLAGS += -O1 -std=gnu11 -ggdb -Wall -Werror -Wno-unused-result -Wno-unused-value -Wno-unused-variable -fopenmp -DDEFAULT_THREADS=4
 
 .PHONY: all git test clean commit-and-make
 
