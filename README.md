@@ -1,30 +1,169 @@
-# WangZhaohui-2024-OS-jyy-Labs
-The repository for my 2024 OS course programming, tongji university, choosing the jyy labs as the topic.
+# M6: GPT-2 并行推理 (gpt.c)
 
-Each branch represents an experiment, and Teacher Jiang Yanyan provided the initial framework code for each experiment: https://git.nju.edu.cn/jyy/os-workbench.git
+> **将 gpt.c 并行化**
 
-Each branch includes project source files, some dependent libraries, and experimental reports.
+## 实验目的和要求
 
-同济大学2024操作系统课程设计，jyy Labs。
+**目的**：
 
-每个分支代表一个实验，蒋炎岩老师给出了每个实验的初始框架代码：https://git.nju.edu.cn/jyy/os-workbench.git
+- 了解gpt模型
+- 通过并行加速模型
 
-每个分支包括项目源文件，一些依赖的库和实验报告。
+**要求**：**打印进程树**
 
-# 实验分类
-**Mini labs (应用程序视角；设计)**：通过实现一系列有趣的/奇怪的 (黑科技) 代码理解操作系统中对象存在的意义和操作系统 API 的使用方法、设计理念
+- 框架代码给出了初始的串行的gpt.c实现，需要更改为并行
 
-**OS labs (计算机硬件视角；实现)**：基于一个简化的硬件抽象层实现多处理器操作系统内核，向应用程序提供一些基础操作系统 API
+  行化后的**程序行为**应当与我们给出的串行程序保持严格一致
 
-# 开发环境:
-**Mini labs**：wsl下运行的Ubuntu 22.04
+  ​
 
-**OS labs**：Abstract Machine(提供硬件抽象，裸机上的C语言运行环境)
 
-# Other things 一些想法
-选择jyy的OS课程是的确一个很大的挑战。对于一个从没接触过Linux，不熟悉命令行操作，不明白编译链接原理，不会基本GNU编译调试工具，没学过计算机系统基础的小白来说，
-用几个星期的时间走完这么正常要走一个学期的路，实在艰难😫😫
 
-**但是**，这确实是一门OS的好课，让我真实感受到了（或者说直接从命令行中看到了）操作系统从无到有的搭建过程，There is no magic in the computer world! 
-我们觉得神奇的，复杂的，有关计算机的事情都是可以通过一定的手段进行调试和观测的。Every thing is a state machine.
-如果能够有效利用一些工具，再加上一些技巧和方法，我们可以清除看到OS整个复杂体系下的每一处细节😙😙
+## 实验环境
+
+- 操作系统Linux ：使用Windows `wsl` (Windows Subsystem for Linux)运行的`Ubuntu  22.04`系统
+- 编译器GCC  调试器GDB
+- 构建和编译程序：`Makefile`
+
+
+
+
+
+## 实验背景
+
+GPT 这样的 “大语言模型” 本质上是一个函数 `f`，能够接收一个 “部分文本”，输出 “文本可能的下一个字符”。这个 “智能” 函数 `f` 具有惊人的应用场景，包括 “一切” 的 copilot (编程、操作系统使用、甚至是课堂学习)，和可以各种替代人类的智能 agent。
+
+但是，对于2019年的模型gpt-2，生成速度无法和今天的模型相比拟，但也意味着我们有一些办法能够实现对于gpt-2的加速。
+
+神经网络推理优化是一个非常复杂的主题；在这里尝试着做出并行化的第一步：**并行化**
+
+为了提升模型的计算效率，本实验引入了 OpenMP（Open Multi-Processing）库，OpenMP 是一个应用程序接口（API），支持多平台共享内存并行编程。通过 OpenMP，可以轻松实现代码的并行化，使得程序能够在多核处理器上同时运行多个线程，从而显著缩短计算时间，提高资源利用率。
+
+
+
+## gpt.c工作原理
+
+GPT核心思想是通过大量的文本数据进行预训练，从而在给定的上下文中生成高质量的自然语言文本。实验首先需要通过研读框架给出的gpt.c，给出如下的解释：
+
+### **模型结构**
+
+GPT-2模型主要由以下几部分组成：
+
+- **词嵌入层（Encoder Forward）**：将输入的词序列转换为对应的词向量（Embedding），并加上位置信息（Positional Encoding）。在代码中的`encoder_forward`函数中，通过嵌入矩阵`wte`和位置矩阵`wpe`对输入序列进行编码。
+- **层归一化（Layer Normalization）**：在每个Transformer层的输入和输出都进行归一化，以加速收敛并稳定训练过程。在`layernorm_forward`函数中，代码实现了对输入的均值和方差计算，然后进行归一化操作，并结合权重和偏置得到最终的输出。
+- **自注意力机制（Self-Attention）**：自注意力机制允许模型在处理当前词时能够参考序列中的其他词，从而捕捉长距离的依赖关系。在`attention_forward`函数中，代码实现了Query、Key和Value的计算，并通过点积、Softmax归一化等步骤得到注意力权重，然后加权求和得到注意力层的输出。
+- **前馈神经网络（Feed-Forward Network）**：每个Transformer层中都包含一个前馈神经网络，它由两个线性变换和一个GELU激活函数组成。代码中通过`matmul_forward`函数完成矩阵乘法操作，并通过`gelu_forward`函数进行GELU非线性变换。
+- **残差连接（Residual Connections）**：残差连接允许将输入直接添加到输出中，从而缓解深层网络的梯度消失问题。在`residual_forward`函数中，代码实现了简单的输入输出相加操作。
+- **Softmax输出层**：最终的模型输出为每个词在词汇表中的概率分布，使用Softmax函数进行归一化。在`softmax_forward`函数中，代码对每个位置的logits值进行指数运算并归一化，得到概率分布。
+
+###**模型的前向传播过程**
+
+在代码的`gpt2_forward`函数中，实现了GPT-2模型的完整前向传播过程。这个过程包括以下步骤：
+
+1. **编码阶段**：将输入的序列通过词嵌入层进行编码，并将编码后的向量传递给后续层。
+2. **多层Transformer计算**：输入依次通过多个Transformer层，每个层包括自注意力机制、前馈神经网络以及相应的层归一化和残差连接操作。
+3. **最终归一化和输出**：经过所有层的计算后，最后的残差输出经过归一化，并通过矩阵乘法和Softmax得到最终的概率分布。
+
+在前向传播过程中，每一步的计算都会生成中间激活值（Activations），这些激活值在模型反向传播过程中也会用到。
+
+
+
+## 并行修改
+
+在本次实验中，对gpt.c代码进行了并行化改造，以提升其计算效率。使用的并行化工具是OpenMP，它能够方便地将计算密集型的循环结构分配到多个处理器核心上运行。
+
+### 编码器前向传播 (encoder_forward)
+
+在`encoder_forward`函数中，模型对输入进行编码操作。原始代码依次遍历批量大小（B）和序列长度（T）的嵌套循环，对每个批次的每个时间步执行向量的加和运算。
+
+为了并行化这一过程，使用OpenMP的`#pragma omp parallel for collapse(2)`指令，将外层的两个循环（批次循环和时间步循环）“折叠”成一个并行循环，这样能够将任务分配到多个线程中并行执行。
+
+~~~c
+#pragma omp parallel for collapse(2)
+for (int b = 0; b < B; b++) {
+    for (int t = 0; t < T; t++) {
+        float* out_bt = out + b * T * C + t * C;
+        int ix = inp[b * T + t];
+        float* wte_ix = wte + ix * C;
+        float* wpe_t = wpe + t * C;
+        for (int i = 0; i < C; i++) {
+            out_bt[i] = wte_ix[i] + wpe_t[i];
+        }
+    }
+}
+~~~
+
+通过使用`collapse(2)`，内外两层循环被视为一个整体，这允许OpenMP更高效地将迭代任务分配给多个线程进行并行计算，从而减少整体的计算时间。
+
+### 层归一化 (layernorm_forward)
+
+这一过程的多个步骤是独立的，特别是对每个时间步和特征的计算。通过使用OpenMP并行化内外循环中的计算操作，每个线程可以独立计算某一批次某一时间步的均值和方差，从而加速归一化处理过程。
+
+
+
+### 矩阵乘法 (matmul_forward)
+
+矩阵乘法是神经网络中非常关键且计算量极大的操作。在`matmul_forward`函数中，输入特征向量与权重矩阵相乘以得到输出向量。原始代码中这个过程也是通过嵌套循环来遍历批量大小、时间步和输出通道。
+
+在并行化处理时，使用了OpenMP对三个嵌套循环进行并行化
+
+~~~c
+#pragma omp parallel for collapse(3)
+for (int b = 0; b < B; b++) {
+    for (int t = 0; t < T; t++) {
+        for (int o = 0; o < OC; o++) {
+			...
+            for (int i = 0; i < C; i++) {
+			...
+            }
+           	...
+        }
+    }
+}
+~~~
+
+通过`collapse(3)`指令，将外层的三个循环折叠为一个整体，充分利用多线程的优势，从而加快矩阵乘法运算速度。
+
+
+
+
+## 结果检测
+
+在完成代码并行化改造后，对比串行与并行实现的执行时间，并通过多个测试用例验证了其性能提升效果。以下是具体的实验结果：
+
+**处理器：** 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+
+**内存：** 16 GB
+
+**操作系统：** Ubuntu 20.04
+
+**编译器：** GCC 
+
+**OpenMP 版本：** 4.5
+
+试验限定token数为10，则进行一系列输入后，从实验结果可以看出，并行化后可以得到一个近似线性的加速比例。
+
+| 串行数 | 平均串行执行时间（毫秒） | 加速比 |
+| :----: | :----------------------: | ------ |
+|   1    |           4955           | 0%     |
+|   2    |           4056           | 18.1%  |
+|   3    |           3596           | 27.4%  |
+|   4    |           2953           | 40.4%  |
+
+
+
+## 一些想法
+
+本次实验难度并不大，更多的是作为扩展内容供学习。老师给结合课上讲的并行方法，给出了一个很有意思的实验。实验主要使用了OMP库作为实现并行的方法，非常方便，相对于使用POSIX线程(`pthread`)是一种较为省力的方法。
+
+gpt.c是对gpt实现原理的很好的说明，它实现了对神经网络的 “真正数学严格” 的描述。虽然这只是对Deep Learning的一次浅尝辄止的学习，但是却发现通过现有的能力也可以尝试解决一些实际的问题，也是很有成就感的事。
+
+
+
+
+
+
+
+
+
+
