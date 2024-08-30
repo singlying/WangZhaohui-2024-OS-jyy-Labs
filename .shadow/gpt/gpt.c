@@ -545,6 +545,10 @@ int sample_mult(float* probabilities, int n) {
 #define GPT2_EOT 50256
 
 int main(int argc, char** argv) {
+    // 使用默认线程数
+    int num_threads = DEFAULT_THREADS;
+    omp_set_num_threads(num_threads);
+
     GPT2 model;
     gpt2_build_from_checkpoint(&model, "gpt2_124M.bin");
     const int n = 10;  // Token limit.
