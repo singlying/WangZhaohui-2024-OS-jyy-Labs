@@ -545,6 +545,9 @@ int sample_mult(float* probabilities, int n) {
 #define GPT2_EOT 50256
 
 int main(int argc, char** argv) {
+    // 初始化数据...
+    double start_time = omp_get_wtime();
+
     // 使用默认线程数
     int num_threads = DEFAULT_THREADS;
     omp_set_num_threads(num_threads);
@@ -583,6 +586,10 @@ int main(int argc, char** argv) {
     }
 
     gpt2_free(&model);
+
+    // cout the time
+    double end_time = omp_get_wtime();
+    printf("Parallel Execution Time: %f seconds\n", end_time - start_time);
 
     return 0;
 }
