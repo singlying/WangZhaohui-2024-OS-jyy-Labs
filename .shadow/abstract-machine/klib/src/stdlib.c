@@ -91,8 +91,6 @@ void free(void *ptr) {
 
   BlockHeader *block = (BlockHeader *)ptr - 1;
   block->is_free = 1;
-
-  // Optional: Coalesce adjacent free blocks (not implemented here)
 }
 
 #endif
