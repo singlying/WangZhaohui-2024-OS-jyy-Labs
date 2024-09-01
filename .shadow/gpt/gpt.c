@@ -546,7 +546,7 @@ int sample_mult(float* probabilities, int n) {
 
 int main(int argc, char** argv) {
     // 使用默认线程数
-    int num_threads = DEFAULT_THREADS;
+    int num_threads = 1;
     omp_set_num_threads(num_threads);
 
     GPT2 model;
