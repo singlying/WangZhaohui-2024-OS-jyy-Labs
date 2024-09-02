@@ -1,0 +1,5 @@
+M5-frecov:  
+格式化后磁盘的数据恢复
+
+fecov目录下  make
+之后直接运行文件，需要传入镜像文件位置      ./frecov-32 ~/M5-frecov.imgs
