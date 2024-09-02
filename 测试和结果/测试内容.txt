@@ -1,0 +1,6 @@
+M4-crepl
+实现C语言的 R-E-P-L
+
+在crepl下面make
+./crepl
+之后输入函数后者计算表达式
