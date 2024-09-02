@@ -1,0 +1,4 @@
+M1- pstree
+在 pstree文件下面  make
+之后运行		make run 测试-32和-64的运行结果
+			make-32 和make-64单独测试
