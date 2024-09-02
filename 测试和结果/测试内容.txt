@@ -1,0 +1,6 @@
+M3：sperf
+任意在改程序内运行指令，检测其系统调用
+
+在sperf下面    make
+	之后运行   sperf-32/-64 COMMAND
+		例如		sperf ls
