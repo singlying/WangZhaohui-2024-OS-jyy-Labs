@@ -15,7 +15,8 @@
 
   行化后的**程序行为**应当与我们给出的串行程序保持严格一致
 
-  ​
+  实验用到了GPT-2的一个124M小版本模型，并未上传到github，需要在此处
+  <a rel="noopener" target="_new" href="https://box.nju.edu.cn/f/da66441d8c6d48d6b848/">下载</a>​
 
 
 
