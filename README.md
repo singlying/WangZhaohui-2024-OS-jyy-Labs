@@ -9,7 +9,7 @@ Each branch includes project source files, some dependent libraries, and experim
 
 每个分支代表一个实验，蒋炎岩老师给出了每个实验的初始框架代码：https://git.nju.edu.cn/jyy/os-workbench.git
 
-每个分支包括项目源文件，一些依赖的库和实验报告。
+每个分支包括项目源文件，一些依赖的库和实验报告以及实验结果。
 
 # 实验分类
 **Mini labs (应用程序视角；设计)**：通过实现一系列有趣的/奇怪的 (黑科技) 代码理解操作系统中对象存在的意义和操作系统 API 的使用方法、设计理念
